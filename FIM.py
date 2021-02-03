@@ -56,9 +56,9 @@ class FIM:
         cols = self._dataSet.columns[:-1]
         print(cols)
         featureList = [self._env.get(key="p-tcp"), self._env.get(key="p-http"), self._env.get(key="p-ssh"),
-                       self._env.get(key="p-dns"), self._env.get(key="p-arp"), self._env.get(key="p-sshv2"),
-                       self._env.get(key="l0"), self._env.get(key="l1"), self._env.get(key="l2"),
-                       self._env.get(key="r-public"), self._env.get(key="r-private"), self._env.get(key="r-non"),
+                       self._env.get(key="p-dns"), self._env.get(key="p-ftp"), self._env.get(key="p-sshv2"),
+                       self._env.get(key="l0"), self._env.get(key="l1"), self._env.get(key="l2"), self._env.get(key="l3"),
+                       # self._env.get(key="r-public"), self._env.get(key="r-private"), self._env.get(key="r-non"),
                        self._env.get(key="c1"), self._env.get(key="c2"), self._env.get(key="c3"),
                        self._env.get(key="c4"), self._env.get(key="c5"), self._env.get(key="d1"),
                        self._env.get(key="d2"), self._env.get(key="d3"), self._env.get(key="d4"),
@@ -85,6 +85,8 @@ class FIM:
         self._dataSet = FIMFunctions.assign_class(self._dataSet, self._env.get(key="botIP"), self._env.get(key="cncIP"),
                                                   self._env.get(key="victimIP"), self._env.get(key="loaderIP"))
         print("Classes are assigned")
+
+        self._dataSet.to_csv('preprocessed.csv')
 
         x_, y_, rules_ = self._freqItemsetMining()
 

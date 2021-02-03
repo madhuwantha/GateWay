@@ -173,13 +173,14 @@ def preProcessing(dataSet):
     dataSet.drop(dataSet.index[dataSet['src_ip'] == '10.1.0.2'], inplace=True)
     dataSet.drop(dataSet.index[dataSet['dst_ip'] == '10.1.0.2'], inplace=True)
 
-    dataSet['length'] = np.where(np.logical_or(dataSet.length < 60, dataSet.length == 60), 0, dataSet.length)
-    dataSet['length'] = np.where(np.logical_and(dataSet.length > 60, dataSet.length < 1000), 1, dataSet.length)
-    dataSet['length'] = np.where(np.logical_or(dataSet.length > 1000, dataSet.length == 1000), 2, dataSet.length)
+    dataSet['length'] = np.where((dataSet.length <= 60), 0, dataSet.length)
+    dataSet['length'] = np.where(np.logical_and(dataSet.length > 60, dataSet.length <= 90), 1, dataSet.length)
+    dataSet['length'] = np.where(np.logical_or(dataSet.length > 90, dataSet.length < 1000), 2, dataSet.length)
+    dataSet['length'] = np.where((dataSet.length >= 1000), 3, dataSet.length)
 
     dataSet = dataSet[dataSet['dst_ip'].notnull()]
 
-    dataSet['Dst_ip_range'] = dataSet.apply(lambda row: check_ip(str(row["dst_ip"])), axis=1)
+    # dataSet['Dst_ip_range'] = dataSet.apply(lambda row: check_ip(str(row["dst_ip"])), axis=1)
     dataSet['Direction'] = dataSet.apply(lambda row: check_direction(str(row["dst_ip"]), cidr), axis=1)
 
     dataSet['length'] = dataSet['length'].astype('str')
