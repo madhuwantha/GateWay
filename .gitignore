@@ -1,1 +1,8 @@
 .idea
+/UpdatedAnomali/anomalies.csv
+/AssociationRules/associationRules.csv
+/AssociationRules/x.csv
+/AssociationRules/y.csv
+/FrequentItems/freqItems.csv
+/venv
+__pycache__
