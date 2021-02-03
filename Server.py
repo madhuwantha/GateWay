@@ -2,27 +2,41 @@ from flask import Flask, request
 import ast
 
 from Env import Env
+from FLModel import FLModel
+
+app = Flask(__name__)
+env = Env()
 
 
-class Server(object):
-    app = Flask(__name__)
+def run():
+    app.run(host=str(env.get(key="host")), port=env.get(key="port"), debug=False, use_reloader=True)
 
-    def run(self):
-        self.app.run(host=Env.get("host"), port=Env.get("host"), debug=False, use_reloader=True)
 
-    @app.route('/update-model', methods=['POST'])
-    def getAggModel(self):
-        if request.method == 'POST':
-            file = request.files['model'].read()
-            fname = request.files['json0'].read()
+@app.route("/", methods=['GET'])
+def test():
+    return "Gateway...."
 
-            fname = ast.literal_eval(fname.decode("utf-8"))
-            fname = fname['fname']
-            print(fname)
 
-            wfile = open("UpdatedModel/" + fname, 'wb')
-            wfile.write(file)
+@app.route('/modeltrain')
+def model_train():
+    fl_model = FLModel(epochs=env.get(key="epochs"))
+    fl_model.train()
+    return "Model trained successfully!"
 
-            return "Model received!"
-        else:
-            return "No file received!"
+
+@app.route('/update-_model', methods=['POST'])
+def getAggModel():
+    if request.method == 'POST':
+        file = request.files['_model'].read()
+        fname = request.files['json0'].read()
+
+        fname = ast.literal_eval(fname.decode("utf-8"))
+        fname = fname['fname']
+        print(fname)
+
+        wfile = open("UpdatedModel/" + fname, 'wb')
+        wfile.write(file)
+
+        return "Model received!"
+    else:
+        return "No file received!"

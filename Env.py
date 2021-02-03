@@ -2,9 +2,7 @@ import json
 
 
 class Env(object):
-
-    def __init__(self):
-        self.env = None
+    env = None
 
     def get(self, key: str) -> str:
         if self.env is None:
