@@ -14,17 +14,20 @@ def run():
 
 @app.route("/", methods=['GET'])
 def test():
-    return "Gateway...."
+    return {'status': True, 'message': "Gateway " + env.get(key="gatewayId") + " is running"}
 
 
 @app.route('/modeltrain')
 def model_train():
-    fl_model = FLModel(epochs=env.get(key="epochs"))
-    fl_model.train()
-    return "Model trained successfully!"
+    try:
+        fl_model = FLModel(epochs=env.get(key="epochs"))
+        fl_model.train()
+        return {'status': True, 'message': "Model trained successfully!"}
+    except:
+        return {'status': False, 'message': "Model trained Failed"}
 
 
-@app.route('/update-_model', methods=['POST'])
+@app.route('/update-model', methods=['POST'])
 def getAggModel():
     if request.method == 'POST':
         file = request.files['_model'].read()
@@ -37,6 +40,6 @@ def getAggModel():
         wfile = open("UpdatedModel/" + fname, 'wb')
         wfile.write(file)
 
-        return "Model received!"
+        return {'status': True, 'message': "Model received!"}
     else:
-        return "No file received!"
+        return {'status': False, 'message': "No file received!"}

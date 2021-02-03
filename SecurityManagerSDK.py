@@ -1,11 +1,14 @@
 import requests, json
 
+from Env import Env
+
 
 class SecurityManagerSDK(object):
 
-    @staticmethod
-    def sendStatus():
-        data = {'client_id': 80, 'client_host': 'host'}
+    env = Env()
+
+    def sendStatus(self):
+        data = {'client_id': self.env.get(key="port"), 'client_host': self.env.get(key="host")}
         r = requests.post(url="api_url", json=data)
         print(r, r.status_code, r.reason, r.text)
         if r.status_code == 200:
