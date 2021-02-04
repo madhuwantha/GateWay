@@ -86,8 +86,6 @@ class FIM:
                                                   self._env.get(key="victimIP"), self._env.get(key="loaderIP"))
         print("Classes are assigned")
 
-        self._dataSet.to_csv('preprocessed.csv')
-
         x_, y_, rules_ = self._freqItemsetMining()
 
         print("Saving Results...")
