@@ -133,14 +133,14 @@ def class_generation(row, bot_ip, cnc_ip, victim_ip, loader_ip):
     """
 
     if row['src_ip'] == bot_ip or row['dst_ip'] == bot_ip:
-        if row['protocol'] == 'SSH' or row['protocol'] == 'SSHv2':
+        if row['protocol'] == env.get(key="p-ssh") or row['protocol'] == env.get(key="p-sshv2"):
             return 'LOGIN'
         else:
             return 'SCAN'
     elif row['src_ip'] == cnc_ip or row['dst_ip'] == cnc_ip:
         return 'CNC_COM'
     elif ((row['src_ip'] == loader_ip or row['dst_ip'] == loader_ip) and (
-            row['protocol'] == 'FTP' or row['protocol'] == 'TCP')):
+            row['protocol'] == env.get(key="p-ftp") or row['protocol'] == env.get(key="p-tcp"))):
         return 'MAL_DOWN'
     elif row['src_ip'] == victim_ip or row['dst_ip'] == victim_ip:
         return 'DDOS'
@@ -180,7 +180,7 @@ def preProcessing(dataSet):
 
     dataSet = dataSet[dataSet['dst_ip'].notnull()]
 
-    # dataSet['Dst_ip_range'] = dataSet.apply(lambda row: check_ip(str(row["dst_ip"])), axis=1)
+    dataSet['Dst_ip_range'] = dataSet.apply(lambda row: check_ip(str(row["dst_ip"])), axis=1)
     dataSet['Direction'] = dataSet.apply(lambda row: check_direction(str(row["dst_ip"]), cidr), axis=1)
 
     dataSet['length'] = dataSet['length'].astype('str')
