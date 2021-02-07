@@ -25,11 +25,12 @@ class FLModel:
         self._batch_size = self.env.get(key="batchSize")
 
     def evaluate(self, x_val, y_val):
-        if self._model is None:
-            self._model = self._buildModel()
-        score = self._model.evaluate(x_val, y_val, verbose=0)
-        print('Test loss:', score[0])
-        print('Test accuracy:', score[1])
+        with keras.backend.get_session().graph.as_default():
+            if self._model is None:
+                self._model = self._buildModel()
+            score = self._model.evaluate(x_val, y_val, verbose=0)
+            print('Test loss:', score[0])
+            print('Test accuracy:', score[1])
 
     def _splitData(self, data):
         """
@@ -63,39 +64,42 @@ class FLModel:
         return x_train, y_train, x_test, y_test
 
     def _save(self):
-        mod = self._model.get_weights()
-        np.save('LocalModel/mod', mod)
-        print("Local _model update written to local storage!")
+        with keras.backend.get_session().graph.as_default():
+            mod = self._model.get_weights()
+            np.save('LocalModel/mod', mod)
+            print("Local _model update written to local storage!")
 
     def _buildModel(self):
         model = None
-        if path.exists("UpdatedModel/agg_model.h5"):
-            print("Agg _model exists...\nLoading _model...")
-            model = load_model("UpdatedModel/agg_model.h5", compile=False)
-        else:
-            print("No agg _model found!\nBuilding _model...")
-            model = Sequential()
-            model.add(Dense(units=200, activation='relu', input_shape=[len(self._x_train.columns)]))
-            model.add(Dense(500, activation='relu'))
-            model.add(Dropout(0.8))
-            model.add(Dense(1000, activation='relu'))
-            model.add(Dropout(0.7))
-            model.add(Dense(400, activation='relu'))
-            model.add(Dropout(0.8))
-            model.add(Dense(len(self._y_train.columns), activation='softmax'))
+        with keras.backend.get_session().graph.as_default():
+            if path.exists("UpdatedModel/agg_model.h5"):
+                print("Agg _model exists...\nLoading _model...")
+                model = load_model("UpdatedModel/agg_model.h5", compile=False)
+            else:
+                print("No agg _model found!\nBuilding _model...")
+                model = Sequential()
+                model.add(Dense(units=200, activation='relu', input_shape=[len(self._x_train.columns)]))
+                model.add(Dense(500, activation='relu'))
+                model.add(Dropout(0.8))
+                model.add(Dense(1000, activation='relu'))
+                model.add(Dropout(0.7))
+                model.add(Dense(400, activation='relu'))
+                model.add(Dropout(0.8))
+                model.add(Dense(len(self._y_train.columns), activation='softmax'))
 
-        model.compile(loss=keras.losses.categorical_crossentropy, optimizer=keras.optimizers.Adadelta(),
-                      metrics=['accuracy'])
+            model.compile(loss=keras.losses.categorical_crossentropy, optimizer=keras.optimizers.Adadelta(),
+                          metrics=['accuracy'])
 
         return model
 
     def train(self):
-        if self._model is None:
-            self._model = self._buildModel()
-        self._model.fit(self._x_train, self._y_train, epochs=self._epochs, verbose=1,
-                        batch_size=self._batch_size,
-                        validation_data=(self._x_val, self._y_val))
-        self._save()
-        smSdk = SecurityManagerSDK()
-        smSdk.sendStatus()
-        smSdk.senModel()
+        with keras.backend.get_session().graph.as_default():
+            if self._model is None:
+                self._model = self._buildModel()
+            self._model.fit(self._x_train, self._y_train, epochs=self._epochs, verbose=1,
+                            batch_size=self._batch_size,
+                            validation_data=(self._x_val, self._y_val))
+            self._save()
+            smSdk = SecurityManagerSDK()
+            smSdk.sendStatus()
+            smSdk.senModel()
