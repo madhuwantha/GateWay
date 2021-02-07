@@ -3,6 +3,7 @@ import ast
 
 from Env import Env
 from FLModel import FLModel
+from SecurityManagerSDK import SecurityManagerSDK
 
 app = Flask(__name__)
 env = Env()
@@ -18,7 +19,7 @@ def test():
 
 
 @app.route('/modeltrain')
-def model_train():
+def modelTrain():
     try:
         fl_model = FLModel(epochs=env.get(key="epochs"))
         fl_model.train()
@@ -30,8 +31,8 @@ def model_train():
 @app.route('/update-model', methods=['POST'])
 def getAggModel():
     if request.method == 'POST':
-        file = request.files['_model'].read()
-        fname = request.files['json0'].read()
+        file = request.files['model'].read()
+        fname = request.files['json'].read()
 
         fname = ast.literal_eval(fname.decode("utf-8"))
         fname = fname['fname']
@@ -43,3 +44,17 @@ def getAggModel():
         return {'status': True, 'message': "Model received!"}
     else:
         return {'status': False, 'message': "No file received!"}
+
+
+@app.route('/send-model')
+def sendModel():
+    smSdk = SecurityManagerSDK()
+    try:
+        smSdk.senModel()
+        return {'status': True, 'message': "Model send!"}
+    except:
+        return {'status': False, 'message': "Model sent failed"}
+
+
+if __name__ == '__main__':
+    app.run(host=str(env.get(key="host")), port=env.get(key="port"), debug=False, use_reloader=True)
