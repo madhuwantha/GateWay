@@ -15,12 +15,12 @@ if __name__ == '__main__':
     print("program Starting.....")
     env = Env()
 
-    run()
+    # run()
 
     # TODO: run anomaly
 
-    # fim = FIM()
-    # x_, y_, rules_ = fim.getFrequentItemset()
+    fim = FIM()
+    x_, y_, rules_ = fim.getFrequentItemset()
 
     # TODO:  model train
 

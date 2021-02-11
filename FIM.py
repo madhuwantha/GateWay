@@ -89,8 +89,8 @@ class FIM:
         x_, y_, rules_ = self._freqItemsetMining()
 
         print("Saving Results...")
-        x_.to_csv(self._env.get(key="associationRulesX"))
-        y_.to_csv(self._env.get(key="associationRulesY"))
+        x_.to_csv(self._env.get(key="associationRulesX"), index=False)
+        y_.to_csv(self._env.get(key="associationRulesY"), index=False)
         rules_.to_csv(self._env.get(key="associationRules"))
         print("Results Saved")
 

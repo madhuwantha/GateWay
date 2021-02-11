@@ -24,8 +24,8 @@ def modelTrain():
         fl_model = FLModel(epochs=env.get(key="epochs"))
         fl_model.train()
         return {'status': True, 'message': "Model trained successfully!"}
-    except:
-        return {'status': False, 'message': "Model trained Failed"}
+    except Exception as e:
+        return {'status': False, 'message': "Model trained Failed " + e.__str__()}
 
 
 @app.route('/update-model', methods=['POST'])

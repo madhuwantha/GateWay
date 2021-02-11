@@ -3,6 +3,8 @@ from __future__ import print_function
 import keras
 from keras.models import Sequential, load_model
 from keras.layers import Dense, Dropout, Flatten
+from keras.callbacks import EarlyStopping
+from keras.callbacks import ModelCheckpoint
 import numpy as np
 import pandas as pd
 from keras.utils import to_categorical
@@ -10,6 +12,10 @@ from os import path
 
 from Env import Env
 from SecurityManagerSDK import SecurityManagerSDK
+from mlxtend.evaluate import confusion_matrix
+from mlxtend.plotting import plot_confusion_matrix
+
+
 
 
 class FLModel:
@@ -31,14 +37,6 @@ class FLModel:
             score = self._model.evaluate(x_val, y_val, verbose=0)
             print('Test loss:', score[0])
             print('Test accuracy:', score[1])
-
-    def _splitData(self, data):
-        """
-        Set the _x_train, _y_train, _x_val, _y_val
-        :param data: One-Hot encoded pandas DataFrame
-        """
-        # TODO : Implementation
-        pass
 
     def _processData(self):
         print("Processing LocalData...")
@@ -65,6 +63,7 @@ class FLModel:
 
     def _save(self):
         with keras.backend.get_session().graph.as_default():
+            self._model = load_model('LocalModel/best_model.h5')
             mod = self._model.get_weights()
             np.save('LocalModel/mod', mod)
             print("Local _model update written to local storage!")
@@ -73,7 +72,7 @@ class FLModel:
         model = None
         with keras.backend.get_session().graph.as_default():
             if path.exists("UpdatedModel/agg_model.h5"):
-                print("Agg _model exists...\nLoading _model...")
+                print("Agg model exists...\nLoading _model...")
                 model = load_model("UpdatedModel/agg_model.h5", compile=False)
             else:
                 print("No agg _model found!\nBuilding _model...")
@@ -92,13 +91,48 @@ class FLModel:
 
         return model
 
+    def _prob_to_class(self, vector):
+        return np.where(vector == np.amax(vector))[0][0]
+
+    def _max_prob(self,vector):
+        return np.amax(vector)
+
+    def _evaluate(self):
+        y_pred = pd.DataFrame(self._model.predict(self._x_val))
+        y_pred['class'] = y_pred.apply(lambda row: self._prob_to_class(row), axis=1)
+
+        result = pd.DataFrame()
+        result["pred"] = y_pred['class'].astype(int)
+        result["true"] = self._y_val.to_numpy().astype(int)
+
+        cm = confusion_matrix(y_target=result['true'], y_predicted=result['pred'])
+
+        # fig, ax = plot_confusion_matrix(conf_mat=cm, cmap="YlGnBu")
+
+        # report = metrics.classification_report(result['true'], result['pred'], digits=3)
+        # print(report)
+
+        return cm
+
+
+
     def train(self):
         with keras.backend.get_session().graph.as_default():
+            es = EarlyStopping(monitor='val_acc', mode='max', verbose=1, patience=50)
+            mc = ModelCheckpoint('LocalModel/best_model.h5', monitor='val_acc', mode='max',
+                                 verbose=1, save_best_only=True)
+
             if self._model is None:
                 self._model = self._buildModel()
-            self._model.fit(self._x_train, self._y_train, epochs=self._epochs, verbose=1,
-                            batch_size=self._batch_size,
-                            validation_data=(self._x_val, self._y_val))
+            self._model.fit(
+                self._x_train,
+                self._y_train,
+                epochs=self._epochs,
+                verbose=0,
+                batch_size=self._batch_size,
+                validation_data=(self._x_val, self._y_val),
+                callbacks=[es, mc]
+            )
             self._save()
             smSdk = SecurityManagerSDK()
             smSdk.sendStatus()
