@@ -14,19 +14,18 @@ from Env import Env
 from SecurityManagerSDK import SecurityManagerSDK
 from mlxtend.evaluate import confusion_matrix
 from mlxtend.plotting import plot_confusion_matrix
-
-
+import matplotlib.pyplot as plt
+from sklearn import metrics
 
 
 class FLModel:
     env = Env()
 
-    def __init__(self, epochs):
-        """
-        :param epochs:
-        """
+    def __init__(self):
+        self._testX = None
+        self._testY = None
         self._x_train, self._y_train, self._x_val, self._y_val = self._processData()
-        self._epochs = epochs
+        self._epochs = self.env.get(key="epochs")
         self._model = None
         self._batch_size = self.env.get(key="batchSize")
 
@@ -50,13 +49,17 @@ class FLModel:
             self.env.get(key="c-MAL_DOWN"),
             self.env.get(key="c-DDOS")
         ])
-        y = pd.DataFrame(to_categorical(y))
+        # y = pd.DataFrame(to_categorical(y))
 
         x_train = x.sample(frac=0.8, random_state=0)
         x_test = x.drop(x_train.index)
 
         y_train = y.sample(frac=0.8, random_state=0)
         y_test = y.drop(y_train.index)
+        self._testY = pd.DataFrame(y_test)
+
+        y_test = pd.DataFrame(to_categorical(y_test))
+        y_train = pd.DataFrame(to_categorical(y_train))
 
         print(x_train.shape, y_train.shape, x_test.shape, y_test.shape)
         return x_train, y_train, x_test, y_test
@@ -91,30 +94,58 @@ class FLModel:
 
         return model
 
-    def _prob_to_class(self, vector):
+    @staticmethod
+    def _probToClass(vector):
         return np.where(vector == np.amax(vector))[0][0]
 
-    def _max_prob(self,vector):
-        return np.amax(vector)
+    @staticmethod
+    def _maxProb(vector):
+        return np.max(vector)
 
-    def _evaluate(self):
-        y_pred = pd.DataFrame(self._model.predict(self._x_val))
-        y_pred['class'] = y_pred.apply(lambda row: self._prob_to_class(row), axis=1)
+    def _loadLocalModel(self):
+        print("*********************************Loading Local Model*********************************")
+        with keras.backend.get_session().graph.as_default():
+            if path.exists("LocalModel/best_model.h5"):
+                print("Agg model exists...\nLoading _model...")
+                self._model = load_model("LocalModel/best_model.h5", compile=False)
+                print("*********************************Local Model Loaded*********************************")
+            else:
+                print("*********************************Failed to load local model*********************************")
+                raise Exception
+
+    def testModel(self):
+        print("*********************************Testing is in progress*********************************")
+
+        try:
+            self._loadLocalModel()
+        except Exception as e:
+            raise e
+
+        if self._model is None:
+            print("********************************* Can't find a model to testing ****************************")
+            raise Exception
+
+        y_pred_init = pd.DataFrame(self._model.predict(self._x_val))
+        y_pred = pd.DataFrame()
+        y_pred['class'] = y_pred_init.apply(lambda row: self._probToClass(row), axis=1)
+        y_pred['prob'] = y_pred_init.apply(lambda row: self._maxProb(row), axis=1)
 
         result = pd.DataFrame()
         result["pred"] = y_pred['class'].astype(int)
-        result["true"] = self._y_val.to_numpy().astype(int)
+        result['true'] = self._testY.to_numpy().astype(int)
+        result["prob"] = y_pred['prob'].astype(float)
+
+        result.to_csv('TestingResult/TestingResult.csv', index=False)
 
         cm = confusion_matrix(y_target=result['true'], y_predicted=result['pred'])
 
-        # fig, ax = plot_confusion_matrix(conf_mat=cm, cmap="YlGnBu")
+        fig, ax = plot_confusion_matrix(conf_mat=cm, cmap="YlGnBu")
+        plt.savefig('Fig/confusion_matrix.png')
 
-        # report = metrics.classification_report(result['true'], result['pred'], digits=3)
-        # print(report)
+        report = metrics.classification_report(result['true'], result['pred'], digits=3)
+        print(report)
 
-        return cm
-
-
+        return report
 
     def train(self):
         with keras.backend.get_session().graph.as_default():
