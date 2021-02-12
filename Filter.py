@@ -78,41 +78,37 @@ def profile(filename):
     i = 0
     inserted = 0
 
-    while True:
-        profiled = False
-        traffic_frame = pd.DataFrame(read_traffic(filename))
 
-        if os.path.exists('Profiles/devices.csv') and not traffic_frame.empty:
-            devices_frame = pd.read_csv('Profiles/devices.csv')
+    traffic_frame = pd.DataFrame(read_traffic(filename))
 
-            for index, row in devices_frame.iterrows():
-                routes_frame = traffic_frame.loc[(traffic_frame.src_ip == row[2]) | (traffic_frame.dst_ip == row[2])]
-                if not routes_frame.empty:
-                    routes_frame['dir'] = routes_frame.apply(lambda x: direction(str(row[2]), x['src_ip'], x['dst_ip']),
+    if os.path.exists('Profiles/devices.csv') and not traffic_frame.empty:
+        devices_frame = pd.read_csv('Profiles/devices.csv')
+
+        for index, row in devices_frame.iterrows():
+            routes_frame = traffic_frame.loc[(traffic_frame.src_ip == row[2]) | (traffic_frame.dst_ip == row[2])]
+            if not routes_frame.empty:
+                routes_frame['dir'] = routes_frame.apply(lambda x: direction(str(row[2]), x['src_ip'], x['dst_ip']),
                                                              axis=1)
-                    profile_frame = routes_frame.groupby(['src_ip', 'dst_ip', 'dst_port', 'protocol', 'dir'],
+                profile_frame = routes_frame.groupby(['src_ip', 'dst_ip', 'dst_port', 'protocol', 'dir'],
                                                          as_index=False).length.agg(['count', 'mean']).reset_index()
 
-                    for index1, row1 in profile_frame.iterrows():
-                        route = str(row1['src_ip']) + str(row1['dst_ip']) + str(row1['dst_port']) + str(row1['dir'])
-                        if c.insert(route, index1):
-                            inserted += 1
+                for index1, row1 in profile_frame.iterrows():
+                    route = str(row1['src_ip']) + str(row1['dst_ip']) + str(row1['protocol']) + str(row1['dir'])
+                    if c.insert(route, index1):
+                        inserted += 1
 
-                    profile_file = "Profiles/"+row['name'] + ".csv"
-                    profile_frame = profile_frame.drop('src_ip', axis=1)
-                    profile_frame.to_csv(profile_file, index=False, mode='a')
-            profiled = True
-            times = times + 1
-            if times > env.get(key="times"):
-                has_profiles = True
-            print('inserted' + str(inserted))
-            # print("Exception")
-        else:
-            i = i + 1
-            print(i)
+                profile_file = "Profiles/"+row['name'] + ".csv"
+                profile_frame = profile_frame.drop('src_ip', axis=1)
+                profile_frame.to_csv(profile_file, index=False, mode='a')
+            
+        times = times + 1
+        if times > env.get(key="times"):
+            has_profiles = True
+        print('inserted ' + str(inserted))
 
-        if profiled:
-            break
+    else:
+        i = i + 1
+        print(i)
 
     print("Profiling complete")
 
@@ -137,7 +133,7 @@ def filter_anomalies(filename):
             elif row['dst_ip'] in devices_frame2.internal_ip.values:
                 direc = 'IN'
 
-            route = str(row['src_ip']) + str(row['dst_ip']) + str(row['dst_port']) + str(direc)
+            route = str(row['src_ip']) + str(row['dst_ip']) + str(row['protocol']) + str(direc)
             index = c.find(route)
             if index is None:
                 print(index, "Couldn't find key", route)
@@ -150,19 +146,21 @@ def filter_anomalies(filename):
 
         print(found + " " + missing)
 
+        anomaly_df = pd.DataFrame(anomalies)
+        allowes_df = pd.DataFrame(allowes)
+
+        if writeHeader:
+            anomaly_df.to_csv('UpdatedAnomali/anomalies.csv', index=False, mode='a', header=True)
+            allowes_df.to_csv('UpdatedAnomali/allowes.csv', index=False, mode='a', header=True)
+        else:
+            anomaly_df.to_csv('UpdatedAnomali/anomalies.csv', index=False, mode='a', header=False)
+            allowes_df.to_csv('UpdatedAnomali/allowes.csv', index=False, mode='a', header=False)
+
     else:
         i = i + 1
         print(i)
 
-    anomaly_df = pd.DataFrame(anomalies)
-    allowes_df = pd.DataFrame(allowes)
-
-    if writeHeader:
-        anomaly_df.to_csv('UpdatedAnomali/anomalies.csv', index=False, mode='a', header=True)
-        allowes_df.to_csv('UpdatedAnomali/allowes.csv', index=False, mode='a', header=True)
-    else:
-        anomaly_df.to_csv('UpdatedAnomali/anomalies.csv', index=False, mode='a', header=False)
-        allowes_df.to_csv('UpdatedAnomali/allowes.csv', index=False, mode='a', header=False)
+    
 
 
 def create_profiles(name):
@@ -177,8 +175,8 @@ def create_profiles(name):
         }
 
         for i in range(len(current_devices)):
-            if not (os.path.exists(current_devices[i].name)):
-                open(current_devices[i].name + '.csv', 'a').close()
+            if not (os.path.exists('Profiles/'+current_devices[i].name)):
+                open('Profiles/'+current_devices[i].name + '.csv', 'a').close()
 
             devices_dict['name'].append(current_devices[i].name)
             devices_dict['mac'].append(current_devices[i].mac)
@@ -205,14 +203,15 @@ def read_traffic(filename):
         csv_reader = csv.DictReader(csv_file,
                                     fieldnames=['no', 'time', 'src_ip', 'src_port', 'dst_ip', 'dst_port', 'protocol',
                                                 'length', 'info'])
+        regex = re.compile(r'[0-9]+(?:\.[0-9]+){3}')                                        
 
         for row in csv_reader:
             if row['time'] != '' and row['time'] != None:
                 packet = {
                     'time': row['time'],
-                    'src_ip': {True: row['src_ip'], False: '0.0.0.0'}[row['src_ip'] != ''],
+                    'src_ip': {True: row['src_ip'], False: '0.0.0.0'}[row['src_ip'] != '' and bool(regex.match(row['src_ip']))],
                     'src_port': {True: row['src_port'], False: '0'}[row['src_port'] != ''],
-                    'dst_ip': {True: row['dst_ip'], False: '0.0.0.0'}[row['dst_ip'] != ''],
+                    'dst_ip': {True: row['dst_ip'], False: '0.0.0.0'}[row['dst_ip'] != '' and bool(regex.match(row['dst_ip']))],
                     'dst_port': {True: row['dst_port'], False: '0'}[row['dst_port'] != ''],
                     'protocol': row['protocol'],
                     'length': int(row['length']),
@@ -247,7 +246,7 @@ def __main():
             if file_queue.qsize() > 0 and has_profiles == False:
                 profile(file_queue.get())
 
-            if file_queue.qsize() > 0:
+            if file_queue.qsize() > 0 and has_profiles == True:
                 filter_anomalies(file_queue.get())
                 writeHeader = False
             time.sleep(5)
