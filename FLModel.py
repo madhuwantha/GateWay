@@ -49,7 +49,6 @@ class FLModel:
             self.env.get(key="c-MAL_DOWN"),
             self.env.get(key="c-DDOS")
         ])
-        # y = pd.DataFrame(to_categorical(y))
 
         x_train = x.sample(frac=0.8, random_state=0)
         x_test = x.drop(x_train.index)

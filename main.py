@@ -1,15 +1,6 @@
 from Env import Env
 
 from FIM import FIM
-# from Server import run
-from FLModel import FLModel
-
-from Server import run
-
-
-def flaskThread():
-    run()
-
 
 if __name__ == '__main__':
     print("program Starting.....")
