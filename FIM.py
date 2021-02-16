@@ -74,7 +74,6 @@ class FIM:
             min_confidence=float(self._env.get(key="minThreshold")), verbosity=1)
 
         rules = pd.DataFrame({"data": rules})
-        # print(rules.head()["data"])
         rules[self._env.get(key="itemA")], rules[self._env.get(key="itemB")], rules['consequents_len'], rules['stage_in_left'] = zip(
             *rules["data"].map(self._modifyEARules))
         rules = rules[(rules.consequents_len == 1) & (rules.stage_in_left == False)]

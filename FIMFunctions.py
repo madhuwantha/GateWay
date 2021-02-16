@@ -91,6 +91,15 @@ def isPrivate(IP: str) -> bool:
     return True if ip_address(IP).is_private else False
 
 
+def check_port(port) -> str:
+    allowed_port_list = [env.get(key="d1"), env.get(key="d2"), env.get(key="d3"), env.get(key="d4"), env.get(key="d5"),
+                         env.get(key="d6"), env.get(key="d7"), env.get(key="d8"), env.get(key="d9"), env.get(key="d10")]
+
+    if port not in allowed_port_list:
+        return env.get(key="d-any")
+    return port
+
+
 def check_ip(ip: str) -> str:
     if is_valid_ip(ip):
         if isPrivate(ip):
@@ -113,7 +122,7 @@ def check_direction(ip: str, cidrs) -> str:
         for cidr in cidrs:
             if ip_address(ip) in ip_network(cidr):
                 count = count + 1
-        if count > 1:
+        if count >= 1:
             return env.get(key="x-in")
         else:
             return env.get(key="x-out")
@@ -190,6 +199,7 @@ def preProcessing(dataSet):
     dataSet['protocol'] = 'p-' + dataSet['protocol']
     dataSet['length'] = 'l-' + dataSet['length']
     dataSet['dst_port'] = 'd-' + dataSet['dst_port']
+    dataSet['dst_port'] = dataSet.apply(lambda row: check_port(str(row["dst_port"])), axis=1)
 
     return dataSet
 
