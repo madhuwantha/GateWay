@@ -177,10 +177,10 @@ def preProcessing(dataSet):
 
     cidr = env.get(key="cidr")
 
-    dataSet.drop(dataSet.index[dataSet['src_ip'] == '10.1.0.33'], inplace=True)
-    dataSet.drop(dataSet.index[dataSet['dst_ip'] == '10.1.0.33'], inplace=True)
-    dataSet.drop(dataSet.index[dataSet['src_ip'] == '10.1.0.2'], inplace=True)
-    dataSet.drop(dataSet.index[dataSet['dst_ip'] == '10.1.0.2'], inplace=True)
+    # dataSet.drop(dataSet.index[dataSet['src_ip'] == '10.1.0.33'], inplace=True)
+    # dataSet.drop(dataSet.index[dataSet['dst_ip'] == '10.1.0.33'], inplace=True)
+    # dataSet.drop(dataSet.index[dataSet['src_ip'] == '10.1.0.2'], inplace=True)
+    # dataSet.drop(dataSet.index[dataSet['dst_ip'] == '10.1.0.2'], inplace=True)
 
     dataSet['length'] = np.where((dataSet.length <= 60), 0, dataSet.length)
     dataSet['length'] = np.where(np.logical_and(dataSet.length > 60, dataSet.length <= 90), 1, dataSet.length)
