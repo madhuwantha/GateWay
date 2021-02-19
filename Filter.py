@@ -148,17 +148,17 @@ def filter_anomalies(filename):
         anomaly_df = pd.DataFrame(anomalies)
         allowes_df = pd.DataFrame(allowes)
 
-        # anomaly_df.to_csv('UpdatedAnomali/anomalies.csv', index=False, mode='a', header=False)
-        # allowes_df.to_csv('UpdatedAnomali/allowes.csv', index=False, mode='a', header=False)
+        anomaly_df.to_csv('UpdatedAnomali/anomalies.csv', index=False, mode='a', header=False)
+        allowes_df.to_csv('UpdatedAnomali/allowes.csv', index=False, mode='a', header=False)
 
-        if writeHeader:
-            shell.execute("chmod +x /root/GateWay/createAnomalieFile.sh")
-            shell.execute("sh /root/GateWay/createAnomalieFile.sh")
-            anomaly_df.to_csv('UpdatedAnomali/anomalies.csv', index=False, mode='a', header=False)
-            allowes_df.to_csv('UpdatedAnomali/allowes.csv', index=False, mode='a', header=False)
-        else:
-            anomaly_df.to_csv('UpdatedAnomali/anomalies.csv', index=False, mode='a', header=False)
-            allowes_df.to_csv('UpdatedAnomali/allowes.csv', index=False, mode='a', header=False)
+        # if writeHeader:
+        #     shell.execute("chmod +x /root/GateWay/createAnomalieFile.sh")
+        #     shell.execute("sh /root/GateWay/createAnomalieFile.sh")
+        #     anomaly_df.to_csv('UpdatedAnomali/anomalies.csv', index=False, mode='a', header=False)
+        #     allowes_df.to_csv('UpdatedAnomali/allowes.csv', index=False, mode='a', header=False)
+        # else:
+        #     anomaly_df.to_csv('UpdatedAnomali/anomalies.csv', index=False, mode='a', header=False)
+        #     allowes_df.to_csv('UpdatedAnomali/allowes.csv', index=False, mode='a', header=False)
 
     else:
         i = i + 1
@@ -235,6 +235,9 @@ def read_traffic(filename):
 def __main():
     thread1 = threading.Thread(target=create_profiles, args=('t1',))
     thread1.start()
+
+    shell.execute("chmod +x /root/GateWay/createAnomalieFile.sh")
+    shell.execute("sh /root/GateWay/createAnomalieFile.sh")
 
     file_queue = queue.Queue()
     global writeHeader
