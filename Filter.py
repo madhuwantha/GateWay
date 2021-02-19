@@ -146,15 +146,16 @@ def filter_anomalies(filename):
         anomaly_df = pd.DataFrame(anomalies)
         allowes_df = pd.DataFrame(allowes)
 
-        anomaly_df.to_csv('UpdatedAnomali/anomalies.csv', index=False, mode='a', header=False)
-        allowes_df.to_csv('UpdatedAnomali/allowes.csv', index=False, mode='a', header=False)
+        # anomaly_df.to_csv('UpdatedAnomali/anomalies.csv', index=False, mode='a', header=False)
+        # allowes_df.to_csv('UpdatedAnomali/allowes.csv', index=False, mode='a', header=False)
 
-        # if writeHeader:
-        #     anomaly_df.to_csv('UpdatedAnomali/anomalies.csv', index=False, mode='a', header=True)
-        #     allowes_df.to_csv('UpdatedAnomali/allowes.csv', index=False, mode='a', header=True)
-        # else:
-        #     anomaly_df.to_csv('UpdatedAnomali/anomalies.csv', index=False, mode='a', header=False)
-        #     allowes_df.to_csv('UpdatedAnomali/allowes.csv', index=False, mode='a', header=False)
+        if writeHeader:
+            subprocess.call("./createAnomalieFile.sh")
+            anomaly_df.to_csv('UpdatedAnomali/anomalies.csv', index=False, mode='a', header=False)
+            allowes_df.to_csv('UpdatedAnomali/allowes.csv', index=False, mode='a', header=False)
+        else:
+            anomaly_df.to_csv('UpdatedAnomali/anomalies.csv', index=False, mode='a', header=False)
+            allowes_df.to_csv('UpdatedAnomali/allowes.csv', index=False, mode='a', header=False)
 
     else:
         i = i + 1
