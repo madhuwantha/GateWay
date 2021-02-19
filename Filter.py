@@ -150,8 +150,8 @@ def filter_anomalies(filename):
         # allowes_df.to_csv('UpdatedAnomali/allowes.csv', index=False, mode='a', header=False)
 
         if writeHeader:
-            subprocess.call("chmod +x createAnomalieFile.sh")
-            subprocess.call("./createAnomalieFile.sh")
+            subprocess.call("chmod +x /root/GateWay/createAnomalieFile.sh")
+            subprocess.call("sh /root/GateWay/createAnomalieFile.sh")
             anomaly_df.to_csv('UpdatedAnomali/anomalies.csv', index=False, mode='a', header=False)
             allowes_df.to_csv('UpdatedAnomali/allowes.csv', index=False, mode='a', header=False)
         else:
