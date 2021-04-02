@@ -23,6 +23,8 @@ times = 0
 writeHeader = True
 all_profiles_frame = pd.DataFrame({'src_ip' :[], 'dst_ip': [], 'dst_port' :[], 'protocol' : [], 'dir' : [], 'count' : [], 'mean' : []})
 
+shell = Shell()
+
 
 class Handler(FileSystemEventHandler):
 
@@ -171,8 +173,10 @@ def filter_anomalies(filename):
         allowes_df.to_csv('UpdatedAnomali/allowes.csv', index=False, mode='a', header=False)
 
         # if writeHeader:
-        #     anomaly_df.to_csv('UpdatedAnomali/anomalies.csv', index=False, mode='a', header=True)
-        #     allowes_df.to_csv('UpdatedAnomali/allowes.csv', index=False, mode='a', header=True)
+        #     shell.execute("chmod +x /root/GateWay/createAnomalieFile.sh")
+        #     shell.execute("sh /root/GateWay/createAnomalieFile.sh")
+        #     anomaly_df.to_csv('UpdatedAnomali/anomalies.csv', index=False, mode='a', header=False)
+        #     allowes_df.to_csv('UpdatedAnomali/allowes.csv', index=False, mode='a', header=False)
         # else:
         #     anomaly_df.to_csv('UpdatedAnomali/anomalies.csv', index=False, mode='a', header=False)
         #     allowes_df.to_csv('UpdatedAnomali/allowes.csv', index=False, mode='a', header=False)
@@ -252,6 +256,9 @@ def read_traffic(filename):
 def __main():
     thread1 = threading.Thread(target=create_profiles, args=('t1',))
     thread1.start()
+
+    shell.execute("chmod +x /root/GateWay/createAnomalieFile.sh")
+    shell.execute("sh /root/GateWay/createAnomalieFile.sh")
 
     file_queue = queue.Queue()
     global writeHeader
