@@ -21,6 +21,7 @@ c = HashTab(100)
 has_profiles = False
 times = 0
 writeHeader = True
+all_profiles_frame = pd.DataFrame({'src_ip' :[], 'dst_ip': [], 'dst_port' :[], 'protocol' : [], 'dir' : [], 'count' : [], 'mean' : []})
 
 
 class Handler(FileSystemEventHandler):
@@ -73,6 +74,7 @@ def get_network_data():
 def profile(filename):
     global has_profiles
     global times
+    global all_profiles_frame
     i = 0
     inserted = 0
 
@@ -94,13 +96,19 @@ def profile(filename):
                     if c.insert(route, index1):
                         inserted += 1
 
+                all_profiles_frame.append(profile_frame, ignore_index=True)
+
                 profile_file = "Profiles/" + row['name'] + ".csv"
                 profile_frame = profile_frame.drop('src_ip', axis=1)
                 profile_frame.to_csv(profile_file, index=False, mode='a')
 
+                
+
         times = times + 1
         if times > int(env.get(key="times")):
             has_profiles = True
+
+
         print('inserted ' + str(inserted))
 
     else:
@@ -117,6 +125,7 @@ def filter_anomalies(filename):
     allowes = []
     i = 0
     global writeHeader
+    global all_profiles_frame
 
     traffic_frame2 = pd.DataFrame(read_traffic(filename))
 
@@ -145,6 +154,18 @@ def filter_anomalies(filename):
 
         anomaly_df = pd.DataFrame(anomalies)
         allowes_df = pd.DataFrame(allowes)
+
+        # behavioral anomaly analysis
+        grouped_frame = allowes_df.groupby(['src_ip', 'dst_ip', 'dst_port', 'protocol', 'dir'],
+                                                     as_index=False).length.agg(['count', 'mean']).reset_index()
+
+        for index, row in grouped_frame.iterrows():
+            temp_df = all_profiles_frame.loc[ (all_profiles_frame.src_ip == row[0]) & (all_profiles_frame.dst_ip == row[1]) & (all_profiles_frame.dst_port == row[2]) & (all_profiles_frame.protocol == row[3]) & (all_profiles_frame.dir == row[4])]
+            temp2_df = temp_df.loc[((temp_df.count - 20 <= row[5]) | (temp_df.count + 20 >= row[5])) & ((temp_df.mean - 2.5 <= row[6]) | (temp_df.count + 2.5 >= row[6]))]
+            if temp2_df.empty:
+                temp_anomalies = allowes_df.loc[(allowes_df.src_ip == row[0]) & (allowes_df.dst_ip == row[1]) & (allowes_df.dst_port == row[2]) & (allowes_df.protocol == row[3]) & (allowes_df.dir == row[4])]
+                anomalies.append(temp_anomalies)
+                
 
         anomaly_df.to_csv('UpdatedAnomali/anomalies.csv', index=False, mode='a', header=False)
         allowes_df.to_csv('UpdatedAnomali/allowes.csv', index=False, mode='a', header=False)
