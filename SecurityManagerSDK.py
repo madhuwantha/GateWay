@@ -8,7 +8,7 @@ class SecurityManagerSDK(object):
 
     def sendStatus(self):
         print("Sending status...............")
-        data = {'client_id': self.env.get(key="port"), 'client_host': self.env.get(key="host")}
+        data = {'client_id': self.env.get(key="port"), 'client_host': self.env.get(key="hostFI")}
         req = requests.post(url=self.env.get(key="serverUrl") + self.env.get(key="getClientStatusUrl"), json=data)
 
         if req.status_code == 200:
