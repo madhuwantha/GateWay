@@ -306,8 +306,14 @@ def __main():
     thread1 = threading.Thread(target=create_profiles, args=('t1',))
     thread1.start()
 
-    shell.execute("chmod +x /root/GateWay/createAnomalieFile.sh")
-    shell.execute("sh /root/GateWay/createAnomalieFile.sh")
+    #shell.execute("chmod +x /root/GateWay/createAnomalieFile.sh")
+    #shell.execute("sh /root/GateWay/createAnomalieFile.sh")
+    intial_result_frame = pd.DataFrame( columns=['time', 'src_ip', 'src_port' , 'dst_ip' ,'dst_port' ,'protocol', 'length' , 'info' ,'dir'])
+    if not (os.path.exists('UpdatedAnomali/anomalies.csv')):
+        intial_result_frame.to_csv('UpdatedAnomali/anomalies.csv')
+    
+    if not (os.path.exists('UpdatedAnomali/allowes.csv')):
+        intial_result_frame.to_csv('UpdatedAnomali/allowes.csv')
 
     file_queue = queue.Queue()
     global writeHeader
