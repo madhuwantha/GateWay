@@ -107,6 +107,14 @@ def profile(filename):
                 profile_frame = routes_frame.groupby(['src_ip', 'dst_ip', 'dst_port', 'protocol', 'dir'],
                                                      as_index=False).length.agg(['count', 'mean']).reset_index()
 
+                profile_file = "Profiles/" + row['name'] + ".csv"
+
+                if os.path.exists(profile_file):
+                    old_profile_frame = pd.read_csv(profile_file)
+
+                    if not old_profile_frame.empty :
+                        profile_frame = profile_frame.append(old_profile_frame)
+
                 for index1, row1 in profile_frame.iterrows():
                     route = str(row1['src_ip']) + str(row1['dst_ip']) + str(row1['protocol']) + str(row1['dir'])
                     if c.insert(route, index1):
@@ -114,9 +122,8 @@ def profile(filename):
 
                 all_profiles_frame = all_profiles_frame.append(profile_frame, ignore_index= True)
 
-                profile_file = "Profiles/" + row['name'] + ".csv"
-                profile_frame = profile_frame.drop('src_ip', axis=1)
-                profile_frame.to_csv(profile_file, index=False, mode='a')
+                # profile_frame = profile_frame.drop('src_ip', axis=1)
+                profile_frame.to_csv(profile_file, index=False)
 
                 
 
@@ -229,9 +236,11 @@ def create_profiles(name):
             'internal_ip': []
         }
 
+        intial_profile_frame = pd.DataFrame(columns=['src_ip', 'dst_ip', 'dst_port', 'protocol', 'dir', 'count', 'mean'])
         for i in range(len(current_devices)):
             if not (os.path.exists('Profiles/' + current_devices[i].name)):
-                open('Profiles/' + current_devices[i].name + '.csv', 'a').close()
+                filename = 'Profiles/' + current_devices[i].name + '.csv'
+                intial_profile_frame.to_csv(filename)
 
             devices_dict['name'].append(current_devices[i].name)
             devices_dict['mac'].append(current_devices[i].mac)
