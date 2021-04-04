@@ -72,6 +72,7 @@ class FIM:
         itemsets, rules = efficient_apriori.apriori(
             transactions, min_support=float(self._env.get(key="minSupport")),
             min_confidence=float(self._env.get(key="minThreshold")), verbosity=1)
+        rules.to_csv("AssociationRules/allAssociationRules-" + self._env.get(key="minSupport") + " .csv", index=False)
 
         rules = pd.DataFrame({"data": rules})
         rules[self._env.get(key="itemA")], rules[self._env.get(key="itemB")], rules['consequents_len'], rules['stage_in_left'] = zip(
