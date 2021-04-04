@@ -14,6 +14,10 @@ from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 from Device import Device
 
+from FLModel import FLModel
+
+from FIMFunctions import oneHot
+
 env = Env()
 
 q = queue.Queue()
@@ -24,6 +28,16 @@ writeHeader = True
 all_profiles_frame = pd.DataFrame()
 
 shell = Shell()
+
+featureList = [env.get(key="p-tcp"), env.get(key="p-http"), env.get(key="p-ssh"),
+               env.get(key="p-dns"), env.get(key="p-ftp"), env.get(key="p-sshv2"),
+               env.get(key="l0"), env.get(key="l1"), env.get(key="l2"),
+               env.get(key="l3"),
+               env.get(key="r-public"), env.get(key="r-private"), env.get(key="r-non"),
+               env.get(key="d1"),
+               env.get(key="d2"), env.get(key="d3"), env.get(key="d4"),
+               env.get(key="d5"), env.get(key="d6"), env.get(key="d7"),
+               env.get(key="d8"), env.get(key="d9"), env.get(key="d10"), env.get(key="d-any")]
 
 
 class Handler(FileSystemEventHandler):
@@ -120,7 +134,7 @@ def profile(filename):
     print("Profiling complete")
 
 
-def filter_anomalies(filename):
+def filter_anomalies(filename, is_prediction=False):
     found = 0
     missing = 0
     anomalies = []
@@ -175,6 +189,20 @@ def filter_anomalies(filename):
 
         anomaly_df.to_csv('UpdatedAnomali/anomalies.csv', index=False, mode='a', header=False)
         allowes_df.to_csv('UpdatedAnomali/allowes.csv', index=False, mode='a', header=False)
+
+
+        if is_prediction:
+            """
+            Perform predictions in prediction stage
+            """
+            model = FLModel()
+            anomaly_df_one_hot_encoded = oneHot(anomaly_df, featureList)
+            predicted = model.predict(anomaly_df_one_hot_encoded)
+
+            predicted_df = anomaly_df
+            predicted_df["predicted_value"] = predicted
+
+            # TODO: impl of the rest api call for demonstrations purpose
 
         # if writeHeader:
         #     shell.execute("chmod +x /root/GateWay/createAnomalieFile.sh")
