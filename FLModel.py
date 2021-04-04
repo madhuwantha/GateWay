@@ -37,6 +37,19 @@ class FLModel:
             print('Test loss:', score[0])
             print('Test accuracy:', score[1])
 
+    def predict(self, test_data):
+        model = None
+        with keras.backend.get_session().graph.as_default():
+            if path.exists("UpdatedModel/agg_model.h5"):
+                print("Agg model exists...\nLoading agg_model...")
+                model = load_model("UpdatedModel/agg_model.h5", compile=False)
+            else:
+                print("Local model exists...\nLoading LocalModel...")
+                model = load_model("LocalModel/best_model.h5", compile=False)
+
+            predicted = model.predict(x=test_data)
+            return predicted
+
     def _processData(self):
         print("Processing LocalData...")
         x = pd.read_csv(self.env.get(key="associationRulesX"))
