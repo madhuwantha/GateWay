@@ -21,7 +21,7 @@ c = HashTab(100)
 has_profiles = False
 times = 0
 writeHeader = True
-all_profiles_frame = pd.DataFrame({'src_ip' :[], 'dst_ip': [], 'dst_port' :[], 'protocol' : [], 'dir' : [], 'count' : [], 'mean' : []})
+all_profiles_frame = pd.DataFrame()
 
 shell = Shell()
 
@@ -98,7 +98,7 @@ def profile(filename):
                     if c.insert(route, index1):
                         inserted += 1
 
-                all_profiles_frame.append(profile_frame, ignore_index=True)
+                all_profiles_frame = all_profiles_frame.append(profile_frame, ignore_index= True)
 
                 profile_file = "Profiles/" + row['name'] + ".csv"
                 profile_frame = profile_frame.drop('src_ip', axis=1)
@@ -132,16 +132,14 @@ def filter_anomalies(filename):
     traffic_frame2 = pd.DataFrame(read_traffic(filename))
 
     if os.path.exists('Profiles/devices.csv') and not traffic_frame2.empty:
+
         devices_frame2 = pd.read_csv('Profiles/devices.csv')
+        traffic_frame2['dir'] = traffic_frame2.apply(lambda x: direction_without_source(devices_frame2, x['src_ip'], x['dst_ip']), axis=1)
+
 
         for index, row in traffic_frame2.iterrows():
-            direc = ''
-            if row['src_ip'] in devices_frame2.internal_ip.values:
-                direc = 'OUT'
-            elif row['dst_ip'] in devices_frame2.internal_ip.values:
-                direc = 'IN'
 
-            route = str(row['src_ip']) + str(row['dst_ip']) + str(row['protocol']) + str(direc)
+            route = str(row['src_ip']) + str(row['dst_ip']) + str(row['protocol']) + str(row['dir'])
             index = c.find(route)
             if index is None:
                 print(index, "Couldn't find key", route)
@@ -158,16 +156,22 @@ def filter_anomalies(filename):
         allowes_df = pd.DataFrame(allowes)
 
         # behavioral anomaly analysis
-        grouped_frame = allowes_df.groupby(['src_ip', 'dst_ip', 'dst_port', 'protocol', 'dir'],
+        if not allowes_df.empty:
+            grouped_frame = allowes_df.groupby(['src_ip', 'dst_ip', 'dst_port', 'protocol', 'dir'],
                                                      as_index=False).length.agg(['count', 'mean']).reset_index()
+            print(grouped_frame.head())
+            print(all_profiles_frame.head())
+            for index, row in grouped_frame.iterrows():
+                temp_df = all_profiles_frame.loc[ (all_profiles_frame.src_ip == row['src_ip']) & (all_profiles_frame.dst_ip == row['dst_ip']) & (all_profiles_frame.protocol == row['protocol']) & (all_profiles_frame.dir == row['dir'])]
 
-        for index, row in grouped_frame.iterrows():
-            temp_df = all_profiles_frame.loc[ (all_profiles_frame.src_ip == row[0]) & (all_profiles_frame.dst_ip == row[1]) & (all_profiles_frame.dst_port == row[2]) & (all_profiles_frame.protocol == row[3]) & (all_profiles_frame.dir == row[4])]
-            temp2_df = temp_df.loc[((temp_df.count - 20 <= row[5]) | (temp_df.count + 20 >= row[5])) & ((temp_df.mean - 2.5 <= row[6]) | (temp_df.count + 2.5 >= row[6]))]
-            if temp2_df.empty:
-                temp_anomalies = allowes_df.loc[(allowes_df.src_ip == row[0]) & (allowes_df.dst_ip == row[1]) & (allowes_df.dst_port == row[2]) & (allowes_df.protocol == row[3]) & (allowes_df.dir == row[4])]
-                anomalies.append(temp_anomalies)
-                
+                if not temp_df.empty:
+                    high_count = int(temp_df['count'].values[0]) + 20
+                    low_count = int(temp_df['count'].values[0]) - 20
+
+                    if not (high_count >= row['count'] and low_count <= row['count']):
+                        temp_anomalies = allowes_df.loc[(allowes_df.src_ip == row['src_ip']) & (allowes_df.dst_ip == row['dst_ip']) & (allowes_df.dst_port == row['dst_port']) & (allowes_df.protocol == row['protocol']) & (allowes_df.dir == row['dir'])]
+                        anomaly_df = anomaly_df.append(temp_anomalies)
+                        temp_anomalies.to_csv('UpdatedAnomali/tempAnomalies.csv', index=False, mode='a')
 
         anomaly_df.to_csv('UpdatedAnomali/anomalies.csv', index=False, mode='a', header=False)
         allowes_df.to_csv('UpdatedAnomali/allowes.csv', index=False, mode='a', header=False)
@@ -217,6 +221,14 @@ def direction(device_ip, src_ip, dst_ip):
     else:
         return 'NA'
 
+def direction_without_source(devices_frame, src_ip, dst_ip):
+
+    if src_ip in devices_frame.internal_ip.values:
+        return 'OUT'
+    elif dst_ip in devices_frame.internal_ip.values:
+        return 'IN'
+    else:
+        return 'NA'
 
 def read_traffic(filename):
     if os.path.exists(filename):
