@@ -10,8 +10,8 @@ if __name__ == '__main__':
 
     # TODO: run anomaly
 
-    #fim = FIM()
-    #x_, y_, rules_ = fim.getFrequentItemset()
+    fim = FIM()
+    x_, y_, rules_ = fim.getFrequentItemset()
 
 
     # TODO:  model train

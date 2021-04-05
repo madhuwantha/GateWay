@@ -23,7 +23,8 @@ class FIM:
                              self._env.get(key="d1"),
                              self._env.get(key="d2"), self._env.get(key="d3"), self._env.get(key="d4"),
                              self._env.get(key="d5"), self._env.get(key="d6"), self._env.get(key="d7"),
-                             self._env.get(key="d8"), self._env.get(key="d9"), self._env.get(key="d10"), self._env.get(key="d-any")]
+                             self._env.get(key="d8"), self._env.get(key="d9"), self._env.get(key="d10"),
+                             self._env.get(key="d-any")]
 
     def _modifyEARules(self, row):
         # print(row)
@@ -72,10 +73,14 @@ class FIM:
         itemsets, rules = efficient_apriori.apriori(
             transactions, min_support=float(self._env.get(key="minSupport")),
             min_confidence=float(self._env.get(key="minThreshold")), verbosity=1)
-        rules.to_csv("AssociationRules/allAssociationRules-" + self._env.get(key="minSupport") + " .csv", index=False)
 
         rules = pd.DataFrame({"data": rules})
-        rules[self._env.get(key="itemA")], rules[self._env.get(key="itemB")], rules['consequents_len'], rules['stage_in_left'] = zip(
+        rules.to_csv("AssociationRules/allAssociationRules.csv", index=False)
+        allRuleCount = rules.shape[0]
+        print(allRuleCount)
+
+        rules[self._env.get(key="itemA")], rules[self._env.get(key="itemB")], rules['consequents_len'], rules[
+            'stage_in_left'] = zip(
             *rules["data"].map(self._modifyEARules))
         rules = rules[(rules.consequents_len == 1) & (rules.stage_in_left == False)]
 
@@ -87,6 +92,21 @@ class FIM:
             y = rules.apply(
                 lambda row: str(row["consequents"][0].replace('[', '').replace(']', '')),
                 axis=1)
+
+        classRuleCount = rules.shape[0]
+        print(classRuleCount)
+        stat = {
+            'minSup': [self._env.get(key="minSupport")],
+            'allRuleCount': [allRuleCount],
+            'classRuleCount': [classRuleCount],
+        }
+        experimentDF = pd.DataFrame(stat)
+        # experimentDF['minSup'] = self._env.get(key="minSupport")
+        # experimentDF['allRuleCount'] = allRuleCount
+        # experimentDF['classRuleCount'] = classRuleCount
+
+        print(experimentDF.shape)
+        experimentDF.to_csv('AssociationRules/experiment.csv', mode='a', header=False)
 
         return x, y, rules
 
