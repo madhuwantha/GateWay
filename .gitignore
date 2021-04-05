@@ -1,5 +1,6 @@
 .idea
 /AssociationRules/associationRules.csv
+/AssociationRules/allAssociationRules.csv
 /AssociationRules/x.csv
 /AssociationRules/y.csv
 /FrequentItems/freqItems.csv
