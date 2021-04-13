@@ -17,6 +17,7 @@ class FIM:
         self._dataSet = None
         self._featureList = [self._env.get(key="p-tcp"), self._env.get(key="p-http"), self._env.get(key="p-ssh"),
                              self._env.get(key="p-dns"), self._env.get(key="p-ftp"), self._env.get(key="p-sshv2"),
+                             self._env.get(key="p-ftp-data"),
                              self._env.get(key="l0"), self._env.get(key="l1"), self._env.get(key="l2"),
                              self._env.get(key="l3"),
                              self._env.get(key="r-public"), self._env.get(key="r-private"), self._env.get(key="r-non"),
@@ -24,7 +25,8 @@ class FIM:
                              self._env.get(key="d2"), self._env.get(key="d3"), self._env.get(key="d4"),
                              self._env.get(key="d5"), self._env.get(key="d6"), self._env.get(key="d7"),
                              self._env.get(key="d8"), self._env.get(key="d9"), self._env.get(key="d10"),
-                             self._env.get(key="d-any")]
+                             self._env.get(key="d-any"), self._env.get(key="x-in"), self._env.get(key="x-out"),
+                             self._env.get(key="x-non")]
 
     def _modifyEARules(self, row):
         # print(row)
@@ -39,7 +41,7 @@ class FIM:
         right = np.char.strip(right)
 
         List1 = [self._env.get(key="c1"), self._env.get(key="c2"), self._env.get(key="c3"), self._env.get(key="c4"),
-                 self._env.get(key="c5")]
+                 self._env.get(key="c5"), self._env.get(key="c6")]
 
         set1 = set(List1)
         set2 = set(right)
@@ -53,7 +55,7 @@ class FIM:
         if len(res_left) > 0:
             stage_in_left = True
 
-        return left, res, len(res), stage_in_left
+        return left, res, len(res), stage_in_left, len(left)
 
     def _dataGenerator(self):
         """
@@ -67,12 +69,13 @@ class FIM:
 
         return data_gen
 
-    def _efficientApriori(self):
+    def _efficientApriori(self, minSup, minConf):
         y = None
         transactions = self._dataGenerator()
+        print("MinSup" + str(minSup))
         itemsets, rules = efficient_apriori.apriori(
-            transactions, min_support=float(self._env.get(key="minSupport")),
-            min_confidence=float(self._env.get(key="minThreshold")), verbosity=1)
+            transactions, min_support=minSup,
+            min_confidence=minConf, verbosity=1)
 
         rules = pd.DataFrame({"data": rules})
         rules.to_csv("AssociationRules/allAssociationRules.csv", index=False)
@@ -80,9 +83,10 @@ class FIM:
         print(allRuleCount)
 
         rules[self._env.get(key="itemA")], rules[self._env.get(key="itemB")], rules['consequents_len'], rules[
-            'stage_in_left'] = zip(
+            'stage_in_left'], rules["antecedent_len"] = zip(
             *rules["data"].map(self._modifyEARules))
         rules = rules[(rules.consequents_len == 1) & (rules.stage_in_left == False)]
+        rules = rules[rules.antecedent_len != 1]
 
         rules.drop(["data", "consequents_len", "stage_in_left"], inplace=True, axis=1)
         rules.reset_index(inplace=True)
@@ -96,7 +100,7 @@ class FIM:
         classRuleCount = rules.shape[0]
         print(classRuleCount)
         stat = {
-            'minSup': [self._env.get(key="minSupport")],
+            'minSup': [minConf],
             'allRuleCount': [allRuleCount],
             'classRuleCount': [classRuleCount],
         }
@@ -110,7 +114,8 @@ class FIM:
 
         return x, y, rules
 
-    def _freqItemsetMining(self):
+    def _freqItemsetMining(self, minSup):
+
         y = None
         print("Starting FIM")
 
@@ -121,7 +126,7 @@ class FIM:
         print("Transaction Encoder is finished")
         print("Apriori is started")
 
-        freqItemsets = apriori(transformed_df, min_support=float(self._env.get(key="minSupport")), use_colnames=True)
+        freqItemsets = apriori(transformed_df, min_support=minSup, use_colnames=True)
         print("Saving Frequent Itemsets...")
         freqItemsets.to_csv(self._env.get(key="freqItemFilePath"))
         print("Frequent Itemsets Saved")
@@ -134,12 +139,14 @@ class FIM:
                       (rules['consequents'] == {self._env.get(key="c2")}) |
                       (rules['consequents'] == {self._env.get(key="c3")}) |
                       (rules['consequents'] == {self._env.get(key="c4")}) |
-                      (rules['consequents'] == {self._env.get(key="c5")}) &
+                      (rules['consequents'] == {self._env.get(key="c5")}) |
+                      (rules['consequents'] == {self._env.get(key="c6")}) &
                       ((self._env.get(key="c1") not in (rules.antecedents.to_list())) |
                        (self._env.get(key="c2") not in (rules.antecedents.to_list())) |
                        (self._env.get(key="c3") not in (rules.antecedents.to_list())) |
                        (self._env.get(key="c4") not in (rules.antecedents.to_list())) |
-                       (self._env.get(key="c5") not in (rules.antecedents.to_list()))
+                       (self._env.get(key="c5") not in (rules.antecedents.to_list())) |
+                       (self._env.get(key="c6") not in (rules.antecedents.to_list()))
                        )]
         rules['antecedents'] = rules.apply(
             lambda row: FIMFunctions.convertToStringList(str(list(row['antecedents']))),
@@ -163,7 +170,10 @@ class FIM:
 
         return x, y, rules
 
-    def getFrequentItemset(self):
+    def getFrequentItemset(self, minSup=0, minConf=0):
+        minSup = float(self._env.get(key="minSupport")) if minSup == 0 else minSup
+        minConf = float(self._env.get(key="minThreshold")) if minConf == 0 else minConf
+
         print("Load data Set")
         self._dataSet = pd.read_csv(self._env.get(key="dataFilePath"))
 
@@ -179,7 +189,7 @@ class FIM:
         self._dataSet.to_csv(self._env.get(key="preprocessedPath"), index=False, header=None)
 
         # x_, y_, rules_ = self._freqItemsetMining()
-        x_, y_, rules_ = self._efficientApriori()
+        x_, y_, rules_ = self._efficientApriori(minSup, minConf)
 
         print("Saving Results...")
         x_.to_csv(self._env.get(key="associationRulesX"), index=False)

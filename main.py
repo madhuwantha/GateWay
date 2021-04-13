@@ -11,6 +11,10 @@ if __name__ == '__main__':
     # TODO: run anomaly
 
     fim = FIM()
+
+    # for i in range(1, 5000, 100):
+    #     x_, y_, rules_ = fim.getFrequentItemset(minConf=i/10000)
+
     x_, y_, rules_ = fim.getFrequentItemset()
 
 
